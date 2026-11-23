@@ -1,0 +1,2425 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>TADABBURVERSE — Interactive 3D Technical Studio | MAN 1 Nganjuk</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <style>
+    :root {
+      --bg-paper: #F4F2EC;
+      --bg-panel: #FAF9F5;
+      --bg-card: #FFFFFF;
+      --bg-inset: #ECE9E0;
+      --ink-primary: #181C24;
+      --ink-secondary: #525866;
+      --ink-muted: #7C8290;
+      --border-line: #D4D0C5;
+      --accent-navy: #1E2A4A;
+      --accent-teal: #0F8A80;
+      --accent-amber: #C68B17;
+      --accent-red: #D9483B;
+      --grid-dot: rgba(24, 28, 36, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      background-color: var(--bg-paper);
+      color: var(--ink-primary);
+      font-family: 'Inter', sans-serif;
+      min-height: 100%;
+      width: 100%;
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Desktop Full-Viewport Lock */
+    @media (min-width: 1025px) {
+      html, body {
+        height: 100vh;
+        overflow: hidden;
+      }
+    }
+
+    .blueprint-traces {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background-image:
+        radial-gradient(var(--grid-dot) 1px, transparent 1px),
+        linear-gradient(to right, rgba(24, 28, 36, 0.035) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(24, 28, 36, 0.035) 1px, transparent 1px);
+      background-size: 24px 24px, 96px 96px, 96px 96px;
+    }
+
+    .font-display {
+      font-family: 'Space Grotesk', sans-serif;
+      letter-spacing: -0.02em;
+    }
+
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .font-arabic {
+      font-family: 'Amiri', serif;
+      direction: rtl;
+      line-height: 2;
+    }
+
+    /* APP ROOT LAYOUT */
+    .app-shell {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      min-height: 100vh;
+      width: 100%;
+    }
+
+    /* LEFT ICON RAIL (Desktop) */
+    aside.left-rail {
+      width: 56px;
+      background: var(--bg-panel);
+      border-right: 1px solid var(--border-line);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0;
+      flex-shrink: 0;
+      z-index: 30;
+    }
+
+    .rail-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .rail-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--ink-secondary);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: all 0.16s ease;
+    }
+
+    .rail-btn:hover {
+      background: var(--bg-inset);
+      color: var(--ink-primary);
+    }
+
+    .rail-btn.active {
+      background: var(--ink-primary);
+      color: #FFFFFF;
+      box-shadow: 0 3px 10px rgba(24, 28, 36, 0.16);
+    }
+
+    .rail-credit {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--ink-muted);
+      letter-spacing: 0.06em;
+    }
+
+    /* WORKSPACE COLUMN */
+    .workspace-column {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    @media (min-width: 1025px) {
+      .workspace-column {
+        height: 100vh;
+        overflow: hidden;
+      }
+    }
+
+    /* TOP HEADER */
+    header.top-bar {
+      min-height: 66px;
+      padding: 10px 20px;
+      border-bottom: 1px solid var(--border-line);
+      background: rgba(250, 249, 245, 0.92);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+      z-index: 25;
+    }
+
+    .brand-cluster {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-logo-pill {
+      height: 36px;
+      padding: 0 12px;
+      border-radius: 999px;
+      background: var(--accent-navy);
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-weight: 700;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
+    .brand-titles h1 {
+      font-size: clamp(15px, 1.8vw, 19px);
+      font-weight: 700;
+      line-height: 1.15;
+      color: var(--ink-primary);
+    }
+
+    .brand-subtitle {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10.5px;
+      color: var(--ink-secondary);
+      letter-spacing: 0.06em;
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .brand-subtitle span {
+      color: var(--accent-amber);
+      font-weight: 700;
+    }
+
+    .header-status-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .progress-widget {
+      background: var(--bg-card);
+      border: 1px solid var(--border-line);
+      border-radius: 10px;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .progress-bar-track {
+      width: 92px;
+      height: 6px;
+      background: var(--bg-inset);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--accent-teal);
+      border-radius: 999px;
+      transition: width 0.3s ease;
+    }
+
+    .clock-widget {
+      background: var(--bg-card);
+      border: 1px solid var(--border-line);
+      border-radius: 10px;
+      padding: 6px 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--ink-secondary);
+      line-height: 1.3;
+      text-align: right;
+    }
+
+    /* MAIN SPLIT STAGE + INSPECTOR */
+    .center-grid {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 390px;
+      position: relative;
+    }
+
+    @media (max-width: 1220px) and (min-width: 1025px) {
+      .center-grid {
+        grid-template-columns: minmax(0, 1fr) 350px;
+      }
+    }
+
+    /* 3D STAGE AREA */
+    .stage-area {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-height: 430px;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    #three-stage-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: grab;
+    }
+
+    #three-stage-canvas:active {
+      cursor: grabbing;
+    }
+
+    #callout-svg-layer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 12;
+    }
+
+    .callout-card {
+      position: absolute;
+      width: 205px;
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border-line);
+      border-radius: 10px;
+      padding: 9px 11px;
+      box-shadow: 0 6px 18px rgba(24, 28, 36, 0.08);
+      z-index: 15;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .callout-card:hover {
+      border-color: var(--ink-primary);
+      transform: translateY(-2px);
+    }
+
+    .callout-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--ink-primary);
+    }
+
+    .callout-icon {
+      width: 19px;
+      height: 19px;
+      border-radius: 5px;
+      background: var(--bg-inset);
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+
+    .callout-body {
+      font-size: 10.8px;
+      line-height: 1.4;
+      color: var(--ink-secondary);
+      margin-top: 4px;
+    }
+
+    /* Compact Mobile/Tablet Callout Strip (shown below canvas on small screens) */
+    .mobile-callout-strip {
+      display: none;
+      padding: 10px 14px;
+      background: var(--bg-panel);
+      border-top: 1px solid var(--border-line);
+      gap: 8px;
+      overflow-x: auto;
+    }
+
+    .mobile-callout-pill {
+      min-width: 185px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-line);
+      border-radius: 9px;
+      padding: 8px 10px;
+      flex-shrink: 0;
+    }
+
+    /* Bottom Floating 3D Toolbar */
+    .stage-toolbar {
+      position: absolute;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid var(--border-line);
+      border-radius: 10px;
+      padding: 5px 8px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      z-index: 20;
+      max-width: calc(100% - 20px);
+      overflow-x: auto;
+    }
+
+    .tool-btn {
+      height: 28px;
+      padding: 0 8px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--ink-secondary);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+
+    .tool-btn:hover {
+      background: var(--bg-inset);
+      color: var(--ink-primary);
+    }
+
+    .tool-btn.active {
+      background: var(--accent-navy);
+      color: #FFFFFF;
+    }
+
+    .tool-divider {
+      width: 1px;
+      height: 16px;
+      background: var(--border-line);
+      flex-shrink: 0;
+    }
+
+    /* RIGHT INSPECTOR PANEL */
+    aside.right-inspector {
+      background: var(--bg-panel);
+      border-left: 1px solid var(--border-line);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      z-index: 20;
+    }
+
+    .inspector-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-bottom: 1px solid var(--border-line);
+      background: var(--bg-card);
+      flex-shrink: 0;
+    }
+
+    .tab-btn {
+      padding: 12px 4px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      transition: all 0.16s ease;
+    }
+
+    .tab-btn:hover {
+      color: var(--ink-primary);
+    }
+
+    .tab-btn.active {
+      color: var(--ink-primary);
+      border-bottom-color: var(--accent-navy);
+      background: var(--bg-panel);
+    }
+
+    .inspector-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 13px;
+    }
+
+    .section-kicker {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--accent-teal);
+    }
+
+    .inspector-title {
+      font-size: 16.5px;
+      font-weight: 700;
+      color: var(--ink-primary);
+      margin-top: 3px;
+      line-height: 1.25;
+    }
+
+    .inspector-desc {
+      font-size: 12.5px;
+      line-height: 1.58;
+      color: var(--ink-secondary);
+    }
+
+    .obs-highlight-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-line);
+      border-left: 3px solid var(--accent-navy);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+
+    .spec-list {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .spec-row {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 12px;
+      color: var(--ink-primary);
+    }
+
+    .spec-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      background: var(--bg-inset);
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    .sandbox-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-line);
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .sandbox-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 9px;
+      gap: 8px;
+    }
+
+    .sandbox-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--ink-primary);
+    }
+
+    .run-pill-btn {
+      padding: 5px 11px;
+      border-radius: 6px;
+      background: var(--accent-navy);
+      color: #FFFFFF;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .run-pill-btn:hover {
+      background: var(--accent-teal);
+    }
+
+    .control-choice-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    .choice-btn {
+      padding: 7px 6px;
+      border-radius: 7px;
+      border: 1px solid var(--border-line);
+      background: var(--bg-panel);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--ink-secondary);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s ease;
+    }
+
+    .choice-btn.active {
+      background: var(--accent-navy);
+      color: #FFFFFF;
+      border-color: var(--accent-navy);
+    }
+
+    .code-telemetry {
+      margin-top: 9px;
+      background: var(--bg-paper);
+      border: 1px solid var(--border-line);
+      border-radius: 7px;
+      padding: 8px 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--ink-primary);
+      line-height: 1.5;
+    }
+
+    .quran-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-line);
+      border-left: 3px solid var(--accent-amber);
+      border-radius: 9px;
+      padding: 12px;
+    }
+
+    /* BOTTOM LESSONS DOCK */
+    footer.lessons-dock {
+      background: rgba(250, 249, 245, 0.95);
+      border-top: 1px solid var(--border-line);
+      padding: 10px 20px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex-shrink: 0;
+      z-index: 25;
+    }
+
+    .lessons-label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .lessons-label {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-secondary);
+    }
+
+    .lessons-strip {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .lesson-card {
+      position: relative;
+      height: 60px;
+      background: var(--bg-card);
+      border: 1.5px solid var(--border-line);
+      border-radius: 10px;
+      padding: 7px 10px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      text-align: left;
+      min-width: 0;
+    }
+
+    .lesson-card:hover {
+      border-color: var(--ink-secondary);
+      transform: translateY(-1px);
+    }
+
+    .lesson-card.active {
+      border: 2px solid var(--ink-primary);
+      background: #FFFFFF;
+      box-shadow: 0 5px 14px rgba(24, 28, 36, 0.1);
+    }
+
+    .lesson-thumb {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      background: var(--bg-inset);
+      display: grid;
+      place-items: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .lesson-meta {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .lesson-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--ink-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .lesson-sub {
+      font-size: 10.5px;
+      color: var(--ink-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+
+    .lesson-check {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      width: 17px;
+      height: 17px;
+      border-radius: 999px;
+      background: var(--accent-teal);
+      color: #FFFFFF;
+      font-size: 9.5px;
+      font-weight: 700;
+      display: grid;
+      place-items: center;
+      border: 2px solid var(--bg-panel);
+    }
+
+    .matrix-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11.5px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .matrix-table th {
+      background: var(--bg-inset);
+      text-align: left;
+      padding: 8px 9px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 10.5px;
+      text-transform: uppercase;
+      color: var(--ink-primary);
+      border-bottom: 1px solid var(--border-line);
+    }
+
+    .matrix-table td {
+      padding: 8px 9px;
+      border-bottom: 1px solid var(--border-line);
+      vertical-align: top;
+      color: var(--ink-secondary);
+      line-height: 1.45;
+    }
+
+    .quiz-opt-btn {
+      width: 100%;
+      text-align: left;
+      padding: 9px 11px;
+      border-radius: 8px;
+      border: 1px solid var(--border-line);
+      background: var(--bg-card);
+      font-size: 12px;
+      color: var(--ink-primary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      margin-bottom: 7px;
+      line-height: 1.45;
+    }
+
+    .quiz-opt-btn:hover:not(:disabled) {
+      border-color: var(--accent-navy);
+      background: var(--bg-inset);
+    }
+
+    .quiz-opt-btn.correct {
+      border-color: var(--accent-teal);
+      background: rgba(15, 138, 128, 0.12);
+      font-weight: 600;
+    }
+
+    .quiz-opt-btn.wrong {
+      border-color: var(--accent-red);
+      background: rgba(217, 72, 59, 0.1);
+    }
+
+    /* TABLET & MOBILE RESPONSIVE ADAPTATIONS */
+    @media (max-width: 1024px) {
+      .app-shell {
+        flex-direction: column;
+        padding-bottom: 64px; /* Space for fixed mobile bottom nav */
+      }
+
+      /* Convert left rail into a compact fixed bottom navigation bar on mobile/tablet */
+      aside.left-rail {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        height: 58px;
+        flex-direction: row;
+        border-right: none;
+        border-top: 1px solid var(--border-line);
+        padding: 0 12px;
+        background: rgba(250, 249, 245, 0.96);
+        backdrop-filter: blur(10px);
+        z-index: 50;
+      }
+
+      .rail-group {
+        flex-direction: row;
+        width: 100%;
+        justify-content: space-around;
+        gap: 4px;
+      }
+
+      .rail-btn {
+        width: 48px;
+        height: 42px;
+      }
+
+      .rail-credit {
+        display: none;
+      }
+
+      .center-grid {
+        grid-template-columns: 1fr;
+        flex: none;
+      }
+
+      .stage-area {
+        height: 360px;
+        min-height: 320px;
+      }
+
+      .callout-card,
+      #callout-svg-layer {
+        display: none !important;
+      }
+
+      .mobile-callout-strip {
+        display: flex;
+      }
+
+      aside.right-inspector {
+        border-left: none;
+        border-top: 1px solid var(--border-line);
+      }
+
+      .inspector-scroll {
+        overflow-y: visible;
+        padding: 14px 16px;
+      }
+
+      .lessons-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      header.top-bar {
+        padding: 10px 14px;
+      }
+
+      .brand-subtitle {
+        display: none;
+      }
+
+      .header-status-group {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .progress-widget {
+        flex: 1;
+      }
+
+      .progress-bar-track {
+        width: 100%;
+        max-width: 90px;
+      }
+
+      .stage-area {
+        height: 300px;
+        min-height: 280px;
+      }
+
+      .lessons-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .lesson-card {
+        height: 54px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="blueprint-traces"></div>
+
+  <div class="app-shell">
+    <!-- LEFT RAIL (Desktop) / BOTTOM NAV (Mobile & Tablet) -->
+    <aside class="left-rail" aria-label="Navigasi Utama">
+      <div class="rail-group">
+        <button class="rail-btn active" data-rail-tab="overview" title="Overview & Simulasi">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </button>
+        <button class="rail-btn" data-rail-tab="quran" title="Ayat & Tafsir">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        </button>
+        <button class="rail-btn" data-rail-tab="matriks" title="Tabel Observasi LKPD">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="9" x2="9" y2="21"/></svg>
+        </button>
+        <button class="rail-btn" data-rail-tab="kuis" title="Uji Pemahaman">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </button>
+      </div>
+
+      <div class="rail-credit">MAN 1 NGANJUK • KOKURIKULER 2026</div>
+    </aside>
+
+    <!-- WORKSPACE COLUMN -->
+    <div class="workspace-column">
+      <header class="top-bar">
+        <div class="brand-cluster">
+          <div class="brand-logo-pill">
+            <span>☾</span>
+            <span class="font-display">TADABBUR</span>
+          </div>
+          <div class="brand-titles">
+            <h1 class="font-display">TADABBURVERSE STUDIO</h1>
+            <div class="brand-subtitle">
+              <span>•</span> EXPLORE &nbsp; <span>•</span> UNDERSTAND &nbsp; <span>•</span> REFLECT &nbsp;|&nbsp; LKPD MAN 1 NGANJUK
+            </div>
+          </div>
+        </div>
+
+        <div class="header-status-group">
+          <div class="progress-widget">
+            <div style="font-size:17px;">📖</div>
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                <span class="font-display" style="font-size:10.5px; font-weight:700; letter-spacing:0.04em;">OBSERVASI LKPD</span>
+                <span class="font-mono" id="header-progress-text" style="font-size:11px; font-weight:700;">1/5</span>
+              </div>
+              <div class="progress-bar-track">
+                <div class="progress-bar-fill" id="header-progress-fill" style="width:20%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="clock-widget">
+            <div style="font-weight:700; color:var(--ink-primary);">MAN 1 NGANJUK</div>
+            <div id="live-clock">23 NOV 2026 • 18:20:00</div>
+          </div>
+        </div>
+      </header>
+
+      <div class="center-grid">
+        <!-- 3D VIEWPORT -->
+        <section class="stage-area" aria-label="Ilustrasi 3D Interaktif LKPD">
+          <canvas id="three-stage-canvas"></canvas>
+          <svg id="callout-svg-layer"></svg>
+
+          <!-- Desktop Floating Callout Cards -->
+          <div class="callout-card" id="callout-0" style="top: 18px; left: 22px;">
+            <div class="callout-header">
+              <span class="callout-icon" id="c0-icon">🌱</span>
+              <span id="c0-title">TITIK OBSERVASI</span>
+            </div>
+            <div class="callout-body" id="c0-desc">Memuat anotasi...</div>
+          </div>
+
+          <div class="callout-card" id="callout-1" style="top: 18px; left: 244px;">
+            <div class="callout-header">
+              <span class="callout-icon" id="c1-icon">☀️</span>
+              <span id="c1-title">VARIABEL ALAM</span>
+            </div>
+            <div class="callout-body" id="c1-desc">Memuat anotasi...</div>
+          </div>
+
+          <div class="callout-card" id="callout-2" style="top: 18px; right: 22px;">
+            <div class="callout-header">
+              <span class="callout-icon" id="c2-icon">📐</span>
+              <span id="c2-title">HASIL PENGAMATAN</span>
+            </div>
+            <div class="callout-body" id="c2-desc">Memuat anotasi...</div>
+          </div>
+
+          <div class="callout-card" id="callout-3" style="bottom: 58px; right: 22px;">
+            <div class="callout-header">
+              <span class="callout-icon" id="c3-icon">🔬</span>
+              <span id="c3-title">KONSEP SAINS</span>
+            </div>
+            <div class="callout-body" id="c3-desc">Memuat anotasi...</div>
+          </div>
+
+          <!-- Bottom Center 3D Camera Toolbar -->
+          <div class="stage-toolbar">
+            <button class="tool-btn" id="btn-cam-reset" title="Reset Sudut">↺ Reset</button>
+            <div class="tool-divider"></div>
+            <button class="tool-btn" id="btn-cam-zoom-in" title="Perbesar">＋</button>
+            <button class="tool-btn" id="btn-cam-zoom-out" title="Perkecil">－</button>
+            <div class="tool-divider"></div>
+            <button class="tool-btn active" id="btn-toggle-labels" title="Toggle Label">🏷️ Label</button>
+            <button class="tool-btn active" id="btn-toggle-auto" title="Toggle Orbit">⟳ Orbit</button>
+          </div>
+        </section>
+
+        <!-- Mobile & Tablet Horizontal Callout Strip -->
+        <div class="mobile-callout-strip" id="mobile-callout-strip"></div>
+
+        <!-- RIGHT INSPECTOR -->
+        <aside class="right-inspector" aria-label="Panel Penjelasan dan Simulasi">
+          <div class="inspector-tabs">
+            <button class="tab-btn active" data-tab="overview">Overview</button>
+            <button class="tab-btn" data-tab="quran">Ayat & Tafsir</button>
+            <button class="tab-btn" data-tab="matriks">Semua Poin</button>
+            <button class="tab-btn" data-tab="kuis">Uji Coba</button>
+          </div>
+
+          <div class="inspector-scroll" id="inspector-content"></div>
+        </aside>
+      </div>
+
+      <!-- BOTTOM OBSERVATION DOCK -->
+      <footer class="lessons-dock">
+        <div class="lessons-label-row">
+          <span class="lessons-label">POIN OBSERVASI LKPD KELOMPOK (MAN 1 NGANJUK)</span>
+          <span class="font-mono" style="font-size:10px; color:var(--ink-secondary);">Seret 3D 360° • Pilih kartu di bawah</span>
+        </div>
+
+        <div class="lessons-strip" id="lessons-strip"></div>
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    /* =========================================================================
+       PROCEDURAL CANVAS TEXTURE GENERATOR (SOIL GRAIN, WOOD, BRICK, RULER, SKY)
+       ========================================================================= */
+    function makeSoilTexture(cracked = true, wet = false) {
+      const c = document.createElement("canvas");
+      c.width = 256;
+      c.height = 256;
+      const ctx = c.getContext("2d");
+
+      ctx.fillStyle = wet ? "#382516" : cracked ? "#B48A58" : "#6D4E31";
+      ctx.fillRect(0, 0, 256, 256);
+
+      // Granular sand & mineral specks
+      for (let i = 0; i < 2600; i++) {
+        const x = Math.random() * 256;
+        const y = Math.random() * 256;
+        const r = Math.random() * 1.8 + 0.4;
+        ctx.fillStyle = wet
+          ? (Math.random() > 0.5 ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.28)")
+          : (Math.random() > 0.5 ? "rgba(255,244,214,0.16)" : "rgba(58,36,16,0.22)");
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Dry soil fissure lines
+      if (cracked) {
+        ctx.strokeStyle = "rgba(62, 38, 17, 0.55)";
+        ctx.lineWidth = 1.6;
+        for (let k = 0; k < 18; k++) {
+          let cx = Math.random() * 256;
+          let cy = Math.random() * 256;
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          for (let s = 0; s < 4; s++) {
+            cx += (Math.random() - 0.5) * 34;
+            cy += (Math.random() - 0.5) * 34;
+            ctx.lineTo(cx, cy);
+          }
+          ctx.stroke();
+        }
+      }
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(2, 2);
+      return tex;
+    }
+
+    function makeWoodTexture(baseHex = "#9E7344") {
+      const c = document.createElement("canvas");
+      c.width = 256;
+      c.height = 256;
+      const ctx = c.getContext("2d");
+      ctx.fillStyle = baseHex;
+      ctx.fillRect(0, 0, 256, 256);
+
+      for (let y = 0; y < 256; y += 3) {
+        ctx.strokeStyle = y % 6 === 0 ? "rgba(45,25,8,0.16)" : "rgba(255,235,200,0.08)";
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.bezierCurveTo(80, y + Math.sin(y * 0.08) * 4, 170, y - Math.cos(y * 0.06) * 4, 256, y);
+        ctx.stroke();
+      }
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      return tex;
+    }
+
+    function makeCourtTileTexture() {
+      const c = document.createElement("canvas");
+      c.width = 256;
+      c.height = 256;
+      const ctx = c.getContext("2d");
+      ctx.fillStyle = "#E6E1D6";
+      ctx.fillRect(0, 0, 256, 256);
+
+      ctx.strokeStyle = "rgba(24,28,36,0.12)";
+      ctx.lineWidth = 2;
+      const step = 64;
+      for (let i = 0; i <= 256; i += step) {
+        ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 256); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(256, i); ctx.stroke();
+      }
+
+      // Subtle concrete speckle
+      for (let i = 0; i < 900; i++) {
+        ctx.fillStyle = "rgba(24,28,36,0.045)";
+        ctx.fillRect(Math.random() * 256, Math.random() * 256, 2, 2);
+      }
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(3, 2);
+      return tex;
+    }
+
+    function makeRulerTexture() {
+      const c = document.createElement("canvas");
+      c.width = 128;
+      c.height = 512;
+      const ctx = c.getContext("2d");
+      ctx.fillStyle = "#F8F5EC";
+      ctx.fillRect(0, 0, 128, 512);
+
+      ctx.fillStyle = "#181C24";
+      ctx.font = "bold 16px monospace";
+      for (let i = 0; i <= 20; i++) {
+        const y = 20 + i * 23;
+        const isMajor = i % 5 === 0;
+        ctx.fillRect(0, y, isMajor ? 48 : 26, 2);
+        if (isMajor) {
+          ctx.fillText(`${(20 - i) * 5}cm`, 54, y + 5);
+        }
+      }
+      return new THREE.CanvasTexture(c);
+    }
+
+    /* =========================================================================
+       DATA 4 POIN LKPD KELOMPOK + 1 SINTESIS TERPADU
+       ========================================================================= */
+    const LKPD_MODULES = [
+      {
+        id: 1,
+        shortCode: "1. TANAH & TANAMAN",
+        subLabel: "El Niño & La Niña",
+        icon: "🌱",
+        kicker: "POIN 01 • BIOLOGI & KLIMATOLOGI",
+        title: "KONDISI TANAH & TANAMAN (EL NIÑO & LA NIÑA)",
+        observedObject: "Kondisi tanah dan tanaman di area sekolah (El Niño & La Niña)",
+        observationResult:
+          "Saat musim kering tanaman yang menguning dan layu akan cepat rontok, sementara saat musim basah kondisi tanah akan becek.",
+        scientificOverview:
+          "Anomali iklim ENSO memengaruhi kelembapan tanah secara ekstrem. Pada fase El Niño (musim kering), defisit air menurunkan tekanan turgor sel tumbuhan sehingga daun layu, klorofil terurai (menguning), dan daun gugur untuk menekan penguapan. Saat La Niña (musim basah), curah hujan tinggi membuat pori tanah jenuh air (becek).",
+        specs: [
+          { icon: "☀️", text: "El Niño: Tanah kering retak, daun menguning & cepat rontok" },
+          { icon: "🌧️", text: "La Niña: Curah hujan tinggi, pori tanah jenuh air (becek)" },
+          { icon: "🌿", text: "Adaptasi fisiologis tumbuhan menekan laju transpirasi" }
+        ],
+        quran: {
+          surah: "QS. Al-Anbiya: 30",
+          arabic: "وَجَعَلْنَا مِنَ الْمَاءِ كُلَّ شَيْءٍ حَيٍّ ۖ أَفَلَا يُؤْمِنُونَ",
+          translation:
+            "Dan Kami jadikan segala sesuatu yang hidup berasal dari air; maka mengapa mereka tidak beriman?",
+          tafsir:
+            "Tafsir Kemenag RI menegaskan bahwa air merupakan unsur vital utama bagi kelangsungan hidup seluruh flora dan fauna di muka bumi.",
+          reflection:
+            "Perubahan musim mengajarkan kita menjaga kelestarian tanaman madrasah dan menggunakan air secara bijak sebagai wujud syukur."
+        },
+        callouts: [
+          { icon: "🌍", title: "LOKASI OBSERVASI", desc: "Area taman & halaman sekolah MAN 1 Nganjuk.", anchor: [-1.7, 0.3, 1.1] },
+          { icon: "☀️", title: "FASE EL NIÑO", desc: "Musim kering: daun menguning, layu & cepat rontok.", anchor: [-0.6, 2.7, -0.3] },
+          { icon: "💧", title: "FASE LA NIÑA", desc: "Musim basah: curah hujan tinggi membuat tanah becek.", anchor: [1.0, 0.75, 0.65] },
+          { icon: "🧬", title: "RESPON BIOLOGIS", desc: "Penurunan turgor & klorosis untuk menekan penguapan.", anchor: [0.3, 1.5, 0.1] }
+        ]
+      },
+      {
+        id: 2,
+        shortCode: "2. TIANG BENDERA",
+        subLabel: "Bayangan Pagi vs Siang",
+        icon: "🚩",
+        kicker: "POIN 02 • ASTRONOMI & ROTASI BUMI",
+        title: "BAYANGAN TIANG BENDERA (PAGI VS SIANG)",
+        observedObject: "Bayangan tiang bendera",
+        observationResult:
+          "Saat pagi hari, bayangan tiang bendera akan sangat panjang mengarah ke barat. Dan saat siang hari, akan memendek tepat di bawah tiang.",
+        scientificOverview:
+          "Rotasi Bumi pada porosnya dari barat ke timur menimbulkan gerak semu harian Matahari. Pada pagi hari, sudut elevasi Matahari (θ) masih rendah di ufuk timur sehingga bayangan tiang memanjang ke arah barat (L = h / tan θ). Pada tengah hari (θ ≈ 90°), bayangan memendek tepat di bawah pangkal tiang.",
+        specs: [
+          { icon: "🌅", text: "Pagi (07:00 WIB): Elevasi rendah → bayangan panjang ke Barat" },
+          { icon: "☀️", text: "Siang (12:00 WIB): Matahari di zenit → bayangan tepat di bawah tiang" },
+          { icon: "📐", text: "Persamaan geometri bayangan: L = h / tan(θ)" }
+        ],
+        quran: {
+          surah: "QS. Al-Furqan: 45",
+          arabic: "أَلَمْ تَرَ إِلَىٰ رَبِّكَ كَيْفَ مَدَّ الظِّلَّ وَلَوْ شَاءَ لَجَعَلَهُ سَاكِنًا",
+          translation:
+            "Tidakkah engkau memperhatikan (penciptaan) Tuhanmu, bagaimana Dia memanjangkan (dan memendekkan) bayang-bayang...",
+          tafsir:
+            "Dalam Tafsir Al-Misbah dijelaskan bahwa pergerakan bayangan akibat peredaran matahari menjadi tanda keteraturan kosmos sekaligus penunjuk waktu ibadah.",
+          reflection:
+            "Ketepatan pergeseran bayangan menjadi dasar penetapan waktu shalat Zuhur dan Ashar—melatih kedisiplinan dalam keseharian."
+        },
+        callouts: [
+          { icon: "☀️", title: "POSISI MATAHARI", desc: "Terbit dari Timur (+X) dengan sudut elevasi rendah di pagi hari.", anchor: [2.6, 2.8, 0.2] },
+          { icon: "🚩", title: "TIANG BENDERA", desc: "Tiang logam ber-katrol & tali pengerek di lapangan upacara.", anchor: [0.0, 2.3, 0.0] },
+          { icon: "⬅️", title: "ARAH BARAT (-X)", desc: "Bayangan memanjang ke barat saat pagi & memendek saat siang.", anchor: [-2.1, 0.2, 0.0] },
+          { icon: "🌐", title: "ROTASI BUMI", desc: "Bumi berotasi 15°/jam dari barat ke timur secara konstan.", anchor: [0.0, 0.2, 1.6] }
+        ]
+      },
+      {
+        id: 3,
+        shortCode: "3. JENDELA KELAS",
+        subLabel: "Cahaya Timur & Barat",
+        icon: "🪟",
+        kicker: "POIN 03 • FISIKA OPTIK & ARSITEKTUR",
+        title: "CAHAYA MATAHARI JENDELA TIMUR & BARAT",
+        observedObject: "Perbedaan cahaya matahari yang masuk melalui jendela yang menghadap timur dan barat",
+        observationResult:
+          "Jendela menghadap timur akan terang benderang saat pagi hari, sementara jendela yang menghadap ke arah barat akan teduh.",
+        scientificOverview:
+          "Cahaya merambat lurus sebagai gelombang elektromagnetik. Pada pagi hari, radiasi sinar Matahari langsung (direct solar irradiance) datang dari timur dan menembus jendela kelas sisi timur secara maksimal. Jendela sisi barat berada di balik bayangan gedung dan hanya menerima cahaya hamburan atmosfer (diffuse sky radiation), sehingga terasa teduh.",
+        specs: [
+          { icon: "🔆", text: "Jendela Timur (Pagi): Menerima radiasi langsung (~850 Lux)" },
+          { icon: "🌤️", text: "Jendela Barat (Pagi): Menerima cahaya hamburan langit (~120 Lux)" },
+          { icon: "🏛️", text: "Penerapan optika untuk pencahayaan alami ruang kelas" }
+        ],
+        quran: {
+          surah: "QS. Yunus: 5",
+          arabic: "هُوَ الَّذِي جَعَلَ الشَّمْسَ ضِيَاءً وَالْقَمَرَ نُورًا وَقَدَّرَهُ مَنَازِلَ",
+          translation:
+            "Dialah yang menjadikan matahari bersinar (diya') dan bulan bercahaya (nur), dan Dialah yang menetapkan tempat-tempat orbitnya...",
+          tafsir:
+            "Al-Qur'an membedakan istilah diya' (sumber sinar mandiri pada matahari) dan nur (cahaya pantulan), selaras dengan sifat radiasi matahari langsung.",
+          reflection:
+            "Memahami arah datang cahaya matahari membantu menciptakan ruang belajar yang nyaman, sehat, dan hemat energi listrik."
+        },
+        callouts: [
+          { icon: "🌅", title: "JENDELA TIMUR (+X)", desc: "Terang benderang di pagi hari terkena sinar matahari langsung.", anchor: [2.7, 1.4, 0.0] },
+          { icon: "✨", title: "BERKAS CAHAYA", desc: "Gelombang cahaya merambat lurus menembus kusen & kaca.", anchor: [1.1, 1.2, 0.2] },
+          { icon: "🌥️", title: "JENDELA BARAT (-X)", desc: "Teduh di pagi hari karena hanya menerima cahaya difus langit.", anchor: [-2.7, 1.4, 0.0] },
+          { icon: "🏫", title: "MEJA & PAPAN KELAS", desc: "Perbedaan intensitas cahaya memengaruhi kenyamanan belajar.", anchor: [0.0, 0.6, 0.8] }
+        ]
+      },
+      {
+        id: 4,
+        shortCode: "4. GRAVITASI NEWTON",
+        subLabel: "Percepatan 9,8 m/s²",
+        icon: "🍎",
+        kicker: "POIN 04 • MEKANIKA KLASIK",
+        title: "HUKUM GRAVITASI NEWTON (g = 9,8 m/s²)",
+        observedObject: "Tarikan benda-benda di seluruh area yang menyebabkan jatuh ke bawah",
+        observationResult:
+          "Adanya hukum gravitasi Newton yang menyebabkan seluruh benda bermassa akan tertarik ke bawah dengan percepatan 9,8 m/s².",
+        scientificOverview:
+          "Hukum Gravitasi Universal Newton (F = G·M·m / r²) menjelaskan bahwa setiap benda bermassa ditarik menuju pusat massa Bumi. Di permukaan Bumi, benda mengalami percepatan jatuh bebas konstan g ≈ 9,8 m/s² ke arah bawah, sehingga benda bermassa berbeda menyentuh lantai bersamaan bila hambatan udara diabaikan.",
+        specs: [
+          { icon: "⬇️", text: "Percepatan gravitasi standar Bumi: g = 9,8 m/s² ke bawah" },
+          { icon: "⚖️", text: "Gaya berat benda: F = m · g (berbanding lurus dengan massa)" },
+          { icon: "⏱️", text: "Jatuh bebas: Bola besi (5 kg) & apel (0,2 kg) tiba bersamaan" }
+        ],
+        quran: {
+          surah: "QS. Al-Mulk: 3–4",
+          arabic: "مَّا تَرَىٰ فِي خَلْقِ الرَّحْمَٰنِ مِن تَفَاوُتٍ ۖ فَارْجِعِ الْبَصَرَ هَلْ تَرَىٰ مِن فُطُورٍ",
+          translation:
+            "...Engkau tidak akan melihat sesuatu yang tidak seimbang pada ciptaan Tuhan Yang Maha Pengasih...",
+          tafsir:
+            "Tafsir Ibnu Katsir menegaskan kesempurnaan dan ketelitian hukum alam yang menjaga keseimbangan seluruh benda di alam semesta.",
+          reflection:
+            "Konstanta gravitasi yang presisi menjaga atmosfer, air, dan manusia tetap berpijak stabil di permukaan Bumi tanpa melayang."
+        },
+        callouts: [
+          { icon: "⚫", title: "BOLA BESI (5 KG)", desc: "Massa besar mengalami gaya berat F = m·g lebih besar.", anchor: [-1.2, 3.1, 0.0] },
+          { icon: "🟢", title: "BENDA RINGAN (0,2 KG)", desc: "Percepatan jatuh bebas tetap sama: g = 9,8 m/s².", anchor: [1.2, 3.1, 0.0] },
+          { icon: "📏", title: "MISTAR SKALA CM", desc: "Pengukuran lintasan vertikal jatuh bebas menuju lantai.", anchor: [0.0, 2.0, -0.6] },
+          { icon: "🧲", title: "PUSAT TARIKAN BUMI", desc: "Seluruh benda bermassa tertarik tegak lurus ke bawah.", anchor: [0.0, 0.25, 1.1] }
+        ]
+      },
+      {
+        id: 5,
+        shortCode: "5. SINTESIS SEMESTA",
+        subLabel: "4 Poin Terpadu LKPD",
+        icon: "🌐",
+        kicker: "POIN 05 • INTEGRASI SAINS & AL-QUR'AN",
+        title: "SINTESIS EMPAT FENOMENA ALAM MAN 1 NGANJUK",
+        observedObject: "Integrasi Biologi, Astronomi, Fisika Optik, dan Mekanika dalam satu ekosistem madrasah",
+        observationResult:
+          "Keempat pengamatan LKPD membuktikan keteraturan hukum alam semesta (sunnatullah) yang saling terhubung dari iklim, peredaran matahari, cahaya, hingga gravitasi.",
+        scientificOverview:
+          "Dari respon tanaman terhadap siklus El Niño/La Niña, pergeseran bayangan tiang bendera akibat rotasi Bumi, pencahayaan alami jendela timur-barat, hingga percepatan gravitasi 9,8 m/s², seluruh gejala di lingkungan MAN 1 Nganjuk bekerja berdasarkan hukum fisika dan biologi yang terukur.",
+        specs: [
+          { icon: "1️⃣", text: "Biologi & Iklim: Adaptasi tanaman & tanah (ENSO)" },
+          { icon: "2️⃣", text: "Astronomi & Optik: Bayangan tiang & cahaya jendela timur-barat" },
+          { icon: "3️⃣", text: "Mekanika: Percepatan gravitasi konstan g = 9,8 m/s²" }
+        ],
+        quran: {
+          surah: "QS. Ali Imran: 190–191",
+          arabic: "إِنَّ فِي خَلْقِ السَّمَاوَاتِ وَالْأَرْضِ وَاخْتِلَافِ اللَّيْلِ وَالنَّهَارِ لَآيَاتٍ لِّأُولِي الْأَلْبَابِ",
+          translation:
+            "Sesungguhnya dalam penciptaan langit dan bumi, dan pergantian malam dan siang terdapat tanda-tanda (kebesaran Allah) bagi orang yang berakal.",
+          tafsir:
+            "Landasan utama Projek Kokurikuler MAN 1 Nganjuk: ulul albab memadukan dzikir (refleksi keimanan) dan fikir (observasi ilmiah).",
+          reflection:
+            "Mengamati lingkungan sekitar madrasah dengan pendekatan ilmiah menumbuhkan Panca Cinta: Cinta Allah SWT dan Cinta Ilmu Pengetahuan."
+        },
+        callouts: [
+          { icon: "🌱", title: "POIN 01: IKLIM & FLORA", desc: "El Niño & La Niña mengatur kelembapan tanah sekolah.", anchor: [-1.7, 1.1, 1.1] },
+          { icon: "🚩", title: "POIN 02: BAYANGAN TIANG", desc: "Rotasi Bumi menggeser bayangan dari barat ke bawah tiang.", anchor: [0.0, 2.7, 0.0] },
+          { icon: "🪟", title: "POIN 03: JENDELA TIMUR-BARAT", desc: "Sudut datang cahaya pagi menerangi sisi timur kelas.", anchor: [1.8, 1.3, 0.8] },
+          { icon: "⬇️", title: "POIN 04: GRAVITASI 9,8 m/s²", desc: "Gaya tarik Bumi menjaga keteraturan seluruh benda.", anchor: [0.0, 0.3, -1.4] }
+        ]
+      }
+    ];
+
+    const QUIZ_DATA = [
+      {
+        q: "1. Apa yang terjadi pada tanah dan tanaman di MAN 1 Nganjuk saat musim kering (El Niño) vs musim basah (La Niña)?",
+        opts: [
+          "Musim kering: daun menguning, layu & cepat rontok; musim basah: tanah becek",
+          "Musim kering: tanah becek; musim basah: percepatan gravitasi menurun",
+          "Tidak terjadi perubahan apa pun pada tanah maupun tanaman"
+        ],
+        ans: 0,
+        exp: "Sesuai Poin 1 LKPD: saat El Niño tanaman menguning, layu, dan cepat rontok; saat La Niña tanah menjadi becek."
+      },
+      {
+        q: "2. Ke arah manakah bayangan tiang bendera mengarah pada pagi hari, dan bagaimana kondisinya saat siang hari?",
+        opts: [
+          "Pagi hari memendek di bawah tiang; siang hari panjang ke timur",
+          "Pagi hari sangat panjang mengarah ke barat; siang hari memendek tepat di bawah tiang",
+          "Pagi dan siang hari selalu mengarah ke utara"
+        ],
+        ans: 1,
+        exp: "Sesuai Poin 2 LKPD: Matahari pagi di timur membuat bayangan panjang ke barat, lalu memendek tepat di bawah tiang saat siang."
+      },
+      {
+        q: "3. Bagaimana perbandingan cahaya matahari pagi yang masuk melalui jendela menghadap timur dan barat?",
+        opts: [
+          "Jendela barat terang benderang, jendela timur teduh",
+          "Jendela timur terang benderang saat pagi hari, jendela barat teduh",
+          "Kedua jendela sama-sama gelap saat pagi hari"
+        ],
+        ans: 1,
+        exp: "Sesuai Poin 3 LKPD: jendela menghadap timur terang benderang terkena sinar matahari pagi, sedangkan sisi barat teduh."
+      },
+      {
+        q: "4. Berapakah percepatan jatuh benda bermassa akibat hukum gravitasi Newton pada hasil observasi LKPD?",
+        opts: ["4,9 m/s²", "9,8 m/s²", "15,0 m/s²"],
+        ans: 1,
+        exp: "Sesuai Poin 4 LKPD: seluruh benda bermassa tertarik ke bawah dengan percepatan gravitasi g = 9,8 m/s²."
+      }
+    ];
+
+    /* =========================================================================
+       APP STATE & LIVE CLOCK
+       ========================================================================= */
+    const appState = {
+      moduleIdx: 0,
+      inspectorTab: "overview",
+      climate: "elnino",
+      sunHour: 7.0,
+      classTime: "pagi",
+      isDropping: false,
+      dropTime: 0,
+      showLabels: true,
+      autoOrbit: true,
+      quizIdx: 0,
+      quizSelected: null,
+      quizScore: 0
+    };
+
+    function updateClock() {
+      const now = new Date();
+      const months = ["JAN", "FEB", "MAR", "APR", "MEI", "JUN", "JUL", "AGU", "SEP", "OKT", "NOV", "DES"];
+      const d = String(now.getDate()).padStart(2, "0");
+      const m = months[now.getMonth()];
+      const y = now.getFullYear();
+      const hh = String(now.getHours()).padStart(2, "0");
+      const mm = String(now.getMinutes()).padStart(2, "0");
+      const ss = String(now.getSeconds()).padStart(2, "0");
+      document.getElementById("live-clock").textContent = `${d} ${m} ${y} • ${hh}:${mm}:${ss}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    /* =========================================================================
+       THREE.JS ENGINE WITH DETAILED 3D GEOMETRY & PROCEDURAL TEXTURES
+       ========================================================================= */
+    const stageArea = document.querySelector(".stage-area");
+    const canvas = document.getElementById("three-stage-canvas");
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(stageArea.clientWidth, stageArea.clientHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(40, stageArea.clientWidth / stageArea.clientHeight, 0.1, 100);
+
+    let camYaw = 0.58;
+    let camPitch = 0.48;
+    let camRadius = 9.6;
+    let isDragging = false;
+    let prevPointer = { x: 0, y: 0 };
+
+    canvas.addEventListener("pointerdown", (e) => {
+      isDragging = true;
+      prevPointer = { x: e.clientX, y: e.clientY };
+    });
+    window.addEventListener("pointerup", () => { isDragging = false; });
+    window.addEventListener("pointermove", (e) => {
+      if (!isDragging) return;
+      const dx = e.clientX - prevPointer.x;
+      const dy = e.clientY - prevPointer.y;
+      camYaw -= dx * 0.008;
+      camPitch = Math.max(0.15, Math.min(1.15, camPitch + dy * 0.006));
+      prevPointer = { x: e.clientX, y: e.clientY };
+    });
+
+    canvas.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      camRadius = Math.max(6.0, Math.min(14.5, camRadius + e.deltaY * 0.005));
+    }, { passive: false });
+
+    document.getElementById("btn-cam-reset").addEventListener("click", () => {
+      camYaw = 0.58;
+      camPitch = 0.48;
+      camRadius = 9.6;
+    });
+    document.getElementById("btn-cam-zoom-in").addEventListener("click", () => {
+      camRadius = Math.max(6.0, camRadius - 1.0);
+    });
+    document.getElementById("btn-cam-zoom-out").addEventListener("click", () => {
+      camRadius = Math.min(14.5, camRadius + 1.0);
+    });
+    document.getElementById("btn-toggle-labels").addEventListener("click", (e) => {
+      appState.showLabels = !appState.showLabels;
+      e.currentTarget.classList.toggle("active", appState.showLabels);
+      document.querySelectorAll(".callout-card").forEach(c => {
+        c.style.display = appState.showLabels ? "block" : "none";
+      });
+      document.getElementById("callout-svg-layer").style.display = appState.showLabels ? "block" : "none";
+    });
+    document.getElementById("btn-toggle-auto").addEventListener("click", (e) => {
+      appState.autoOrbit = !appState.autoOrbit;
+      e.currentTarget.classList.toggle("active", appState.autoOrbit);
+    });
+
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0xd8d3c8, 0.88);
+    scene.add(hemiLight);
+
+    const keyLight = new THREE.DirectionalLight(0xfffbeb, 1.18);
+    keyLight.position.set(6, 10, 6);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.width = 1024;
+    keyLight.shadow.mapSize.height = 1024;
+    keyLight.shadow.camera.left = -6;
+    keyLight.shadow.camera.right = 6;
+    keyLight.shadow.camera.top = 6;
+    keyLight.shadow.camera.bottom = -6;
+    scene.add(keyLight);
+
+    const pedestalGrid = new THREE.GridHelper(8, 16, 0xb8b2a6, 0xdcd7cb);
+    pedestalGrid.position.y = -0.02;
+    scene.add(pedestalGrid);
+
+    const worldGroup = new THREE.Group();
+    scene.add(worldGroup);
+
+    let sceneHandles = {};
+
+    function clearWorld() {
+      while (worldGroup.children.length > 0) {
+        worldGroup.remove(worldGroup.children[0]);
+      }
+      sceneHandles = {};
+    }
+
+    /* --- DETAILED 3D MODEL 1: TANAH & TANAMAN (EL NINO & LA NINA) --- */
+    function buildModel1() {
+      clearWorld();
+      const soilTex = makeSoilTexture(true, false);
+      const soilMat = new THREE.MeshStandardMaterial({ map: soilTex, roughness: 0.92 });
+      const soilBase = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.72, 3.6), soilMat);
+      soilBase.position.y = 0.36;
+      soilBase.castShadow = true;
+      soilBase.receiveShadow = true;
+      worldGroup.add(soilBase);
+
+      // Cutaway dark humus & bedrock strata
+      const subSoil = new THREE.Mesh(
+        new THREE.BoxGeometry(4.53, 0.24, 3.63),
+        new THREE.MeshStandardMaterial({ color: 0x4c3521, roughness: 0.96 })
+      );
+      subSoil.position.y = 0.12;
+      worldGroup.add(subSoil);
+
+      // Surface root tendrils & small pebbles
+      const rootMat = new THREE.MeshStandardMaterial({ color: 0x7c5230, roughness: 0.9 });
+      for (let i = 0; i < 5; i++) {
+        const root = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.06, 0.85, 8), rootMat);
+        root.position.set(-0.6 + (Math.random() - 0.5) * 0.9, 0.72, -0.3 + (Math.random() - 0.5) * 0.9);
+        root.rotation.z = (Math.random() - 0.5) * 1.4;
+        root.rotation.x = (Math.random() - 0.5) * 1.4;
+        worldGroup.add(root);
+      }
+
+      // Puddle for La Nina
+      const puddle = new THREE.Mesh(
+        new THREE.CylinderGeometry(1.2, 1.2, 0.04, 28),
+        new THREE.MeshStandardMaterial({
+          color: 0x16998e,
+          roughness: 0.1,
+          metalness: 0.35,
+          transparent: true,
+          opacity: 0.82
+        })
+      );
+      puddle.position.set(1.05, 0.74, 0.65);
+      puddle.visible = false;
+      worldGroup.add(puddle);
+
+      // Bark-textured trunk + branches
+      const woodTex = makeWoodTexture("#6B4423");
+      const trunk = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.16, 0.28, 1.85, 14),
+        new THREE.MeshStandardMaterial({ map: woodTex, roughness: 0.88 })
+      );
+      trunk.position.set(-0.6, 1.62, -0.3);
+      trunk.castShadow = true;
+      worldGroup.add(trunk);
+
+      const b1 = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.11, 0.9, 10), new THREE.MeshStandardMaterial({ map: woodTex }));
+      b1.position.set(-0.25, 2.25, -0.15);
+      b1.rotation.z = -0.6;
+      const b2 = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.11, 0.85, 10), new THREE.MeshStandardMaterial({ map: woodTex }));
+      b2.position.set(-0.95, 2.2, -0.1);
+      b2.rotation.z = 0.65;
+      worldGroup.add(b1, b2);
+
+      // Layered Leaf Clusters
+      const leavesMat = new THREE.MeshStandardMaterial({ color: 0xd99b26, roughness: 0.72, flatShading: false });
+      const canopy = new THREE.Group();
+      const clusters = [
+        [0, 0, 0, 0.92],
+        [0.68, -0.15, 0.25, 0.68],
+        [-0.65, -0.18, 0.3, 0.65],
+        [0.1, 0.45, -0.2, 0.62],
+        [0.35, 0.15, -0.55, 0.55]
+      ];
+      clusters.forEach(([x, y, z, r]) => {
+        const m = new THREE.Mesh(new THREE.DodecahedronGeometry(r, 1), leavesMat);
+        m.position.set(x, y, z);
+        m.castShadow = true;
+        canopy.add(m);
+      });
+      canopy.position.set(-0.6, 2.75, -0.3);
+      worldGroup.add(canopy);
+
+      // Falling leaves / rain particles
+      const pCount = 85;
+      const pGeo = new THREE.BufferGeometry();
+      const pArr = new Float32Array(pCount * 3);
+      for (let i = 0; i < pCount * 3; i += 3) {
+        pArr[i] = (Math.random() - 0.5) * 4.1;
+        pArr[i + 1] = 0.85 + Math.random() * 3.4;
+        pArr[i + 2] = (Math.random() - 0.5) * 3.2;
+      }
+      pGeo.setAttribute("position", new THREE.BufferAttribute(pArr, 3));
+      const pMat = new THREE.PointsMaterial({ color: 0xd98218, size: 0.14 });
+      const particles = new THREE.Points(pGeo, pMat);
+      worldGroup.add(particles);
+
+      sceneHandles = { soilMat, leavesMat, canopy, puddle, particles, pMat };
+      applyModel1State();
+    }
+
+    function applyModel1State() {
+      const h = sceneHandles;
+      if (!h.soilMat) return;
+      if (appState.climate === "elnino") {
+        h.soilMat.map = makeSoilTexture(true, false);
+        h.soilMat.needsUpdate = true;
+        h.leavesMat.color.setHex(0xd99b26);
+        h.canopy.scale.set(0.85, 0.8, 0.85);
+        h.puddle.visible = false;
+        h.pMat.color.setHex(0xd98218);
+        h.pMat.size = 0.15;
+        h.particles.visible = true;
+      } else if (appState.climate === "lanina") {
+        h.soilMat.map = makeSoilTexture(false, true);
+        h.soilMat.needsUpdate = true;
+        h.leavesMat.color.setHex(0x15803d);
+        h.canopy.scale.set(1.12, 1.12, 1.12);
+        h.puddle.visible = true;
+        h.pMat.color.setHex(0x0284c7);
+        h.pMat.size = 0.09;
+        h.particles.visible = true;
+      } else {
+        h.soilMat.map = makeSoilTexture(false, false);
+        h.soilMat.needsUpdate = true;
+        h.leavesMat.color.setHex(0x22a055);
+        h.canopy.scale.set(1, 1, 1);
+        h.puddle.visible = false;
+        h.particles.visible = false;
+      }
+    }
+
+    /* --- DETAILED 3D MODEL 2: BAYANGAN TIANG BENDERA --- */
+    function buildModel2() {
+      clearWorld();
+      const tileTex = makeCourtTileTexture();
+      const court = new THREE.Mesh(
+        new THREE.BoxGeometry(6.8, 0.18, 4.2),
+        new THREE.MeshStandardMaterial({ map: tileTex, roughness: 0.82 })
+      );
+      court.position.y = 0.09;
+      court.receiveShadow = true;
+      worldGroup.add(court);
+
+      // East & West Marker Plates
+      const eastBar = new THREE.Mesh(
+        new THREE.BoxGeometry(0.28, 0.22, 1.4),
+        new THREE.MeshStandardMaterial({ color: 0xc68b17, roughness: 0.5 })
+      );
+      eastBar.position.set(3.1, 0.12, 0);
+
+      const westBar = new THREE.Mesh(
+        new THREE.BoxGeometry(0.28, 0.22, 1.4),
+        new THREE.MeshStandardMaterial({ color: 0x0f8a80, roughness: 0.5 })
+      );
+      westBar.position.set(-3.1, 0.12, 0);
+      worldGroup.add(eastBar, westBar);
+
+      // Stepped Plinth + Finial + Halyard Cord
+      const plinth1 = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.65, 0.14, 20), new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.6 }));
+      plinth1.position.y = 0.25;
+      plinth1.receiveShadow = true;
+      const plinth2 = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.44, 0.16, 20), new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.5 }));
+      plinth2.position.y = 0.4;
+      plinth2.castShadow = true;
+      worldGroup.add(plinth1, plinth2);
+
+      const pole = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.042, 0.062, 3.05, 16),
+        new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.7, roughness: 0.25 })
+      );
+      pole.position.y = 1.98;
+      pole.castShadow = true;
+
+      const finial = new THREE.Mesh(
+        new THREE.SphereGeometry(0.09, 16, 16),
+        new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.85, roughness: 0.2 })
+      );
+      finial.position.y = 3.53;
+      worldGroup.add(pole, finial);
+
+      const flagTop = new THREE.Mesh(
+        new THREE.BoxGeometry(0.88, 0.25, 0.03),
+        new THREE.MeshStandardMaterial({ color: 0xd9483b, roughness: 0.65 })
+      );
+      flagTop.position.set(0.46, 3.22, 0);
+      flagTop.castShadow = true;
+
+      const flagBot = new THREE.Mesh(
+        new THREE.BoxGeometry(0.88, 0.25, 0.03),
+        new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.65 })
+      );
+      flagBot.position.set(0.46, 2.97, 0);
+      flagBot.castShadow = true;
+      worldGroup.add(flagTop, flagBot);
+
+      const sunOrb = new THREE.Mesh(
+        new THREE.SphereGeometry(0.32, 20, 20),
+        new THREE.MeshBasicMaterial({ color: 0xf59e0b })
+      );
+      const sunHalo = new THREE.Mesh(
+        new THREE.RingGeometry(0.4, 0.52, 24),
+        new THREE.MeshBasicMaterial({ color: 0xfbbf24, side: THREE.DoubleSide, transparent: true, opacity: 0.55 })
+      );
+      sunOrb.add(sunHalo);
+      worldGroup.add(sunOrb);
+
+      sceneHandles = { sunOrb, flagTop, flagBot };
+      applyModel2State();
+    }
+
+    function applyModel2State() {
+      const h = sceneHandles;
+      if (!h.sunOrb) return;
+      const t = (appState.sunHour - 6) / 11;
+      const deg = 16 + t * 148;
+      const rad = THREE.MathUtils.degToRad(deg);
+      const r = 4.5;
+      const sx = Math.cos(rad) * r;
+      const sy = Math.sin(rad) * r + 0.4;
+      h.sunOrb.position.set(sx, sy, 0.2);
+      h.sunOrb.lookAt(camera.position);
+      keyLight.position.set(sx * 1.6, sy * 1.6, 0.5);
+    }
+
+    /* --- DETAILED 3D MODEL 3: JENDELA TIMUR & BARAT --- */
+    function buildModel3() {
+      clearWorld();
+      keyLight.position.set(6, 10, 6);
+
+      const tileTex = makeCourtTileTexture();
+      const floor = new THREE.Mesh(
+        new THREE.BoxGeometry(5.6, 0.2, 3.8),
+        new THREE.MeshStandardMaterial({ map: tileTex, roughness: 0.78 })
+      );
+      floor.position.y = 0.1;
+      floor.receiveShadow = true;
+      worldGroup.add(floor);
+
+      const wallMat = new THREE.MeshStandardMaterial({ color: 0xd8dee6, roughness: 0.82 });
+      const frameMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.5 });
+
+      // East Wall (+X) + Mullion Frame
+      const eTop = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.55, 3.8), wallMat);
+      eTop.position.set(2.7, 2.1, 0);
+      const eBot = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.75, 3.8), wallMat);
+      eBot.position.set(2.7, 0.55, 0);
+      const eGlass = new THREE.Mesh(
+        new THREE.BoxGeometry(0.04, 0.9, 2.8),
+        new THREE.MeshStandardMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.34, roughness: 0.1 })
+      );
+      eGlass.position.set(2.7, 1.38, 0);
+      const eMullion = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.92, 0.08), frameMat);
+      eMullion.position.set(2.7, 1.38, 0);
+      worldGroup.add(eTop, eBot, eGlass, eMullion);
+
+      // West Wall (-X) + Mullion Frame
+      const wTop = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.55, 3.8), wallMat);
+      wTop.position.set(-2.7, 2.1, 0);
+      const wBot = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.75, 3.8), wallMat);
+      wBot.position.set(-2.7, 0.55, 0);
+      const wGlass = new THREE.Mesh(
+        new THREE.BoxGeometry(0.04, 0.9, 2.8),
+        new THREE.MeshStandardMaterial({ color: 0x64748b, transparent: true, opacity: 0.34, roughness: 0.1 })
+      );
+      wGlass.position.set(-2.7, 1.38, 0);
+      const wMullion = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.92, 0.08), frameMat);
+      wMullion.position.set(-2.7, 1.38, 0);
+      worldGroup.add(wTop, wBot, wGlass, wMullion);
+
+      // Detailed Classroom Desks with 4 Legs
+      const woodTex = makeWoodTexture("#A87B49");
+      const topMat = new THREE.MeshStandardMaterial({ map: woodTex, roughness: 0.65 });
+      const legMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.4, roughness: 0.5 });
+
+      [-1.05, 1.05].forEach((x) => {
+        [-0.75, 0.75].forEach((z) => {
+          const group = new THREE.Group();
+          const top = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.07, 0.68), topMat);
+          top.position.y = 0.62;
+          top.castShadow = true;
+          top.receiveShadow = true;
+          group.add(top);
+
+          [[-0.38, -0.26], [0.38, -0.26], [-0.38, 0.26], [0.38, 0.26]].forEach(([lx, lz]) => {
+            const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.42, 8), legMat);
+            leg.position.set(lx, 0.41, lz);
+            leg.castShadow = true;
+            group.add(leg);
+          });
+
+          group.position.set(x, 0, z);
+          worldGroup.add(group);
+        });
+      });
+
+      const beamMat = new THREE.MeshBasicMaterial({
+        color: 0xf59e0b,
+        transparent: true,
+        opacity: 0.25,
+        side: THREE.DoubleSide
+      });
+      const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 1.75, 3.9, 20, 1, true), beamMat);
+      worldGroup.add(beam);
+
+      sceneHandles = { beam, beamMat };
+      applyModel3State();
+    }
+
+    function applyModel3State() {
+      const h = sceneHandles;
+      if (!h.beam) return;
+      if (appState.classTime === "pagi") {
+        h.beam.position.set(1.1, 1.15, 0);
+        h.beam.rotation.z = Math.PI / 3;
+        h.beamMat.opacity = 0.28;
+        keyLight.position.set(8, 4, 1);
+      } else if (appState.classTime === "sore") {
+        h.beam.position.set(-1.1, 1.15, 0);
+        h.beam.rotation.z = -Math.PI / 3;
+        h.beamMat.opacity = 0.28;
+        keyLight.position.set(-8, 4, 1);
+      } else {
+        h.beam.position.set(0, 2.0, 0);
+        h.beam.rotation.z = 0;
+        h.beamMat.opacity = 0.14;
+        keyLight.position.set(0, 10, 1);
+      }
+    }
+
+    /* --- DETAILED 3D MODEL 4: GRAVITASI NEWTON (9,8 m/s²) --- */
+    function buildModel4() {
+      clearWorld();
+      keyLight.position.set(6, 10, 6);
+
+      const tileTex = makeCourtTileTexture();
+      const base = new THREE.Mesh(
+        new THREE.BoxGeometry(5.2, 0.24, 3.4),
+        new THREE.MeshStandardMaterial({ map: tileTex, roughness: 0.8 })
+      );
+      base.position.y = 0.12;
+      base.receiveShadow = true;
+      worldGroup.add(base);
+
+      // Graduated Ruler Column
+      const rulerTex = makeRulerTexture();
+      const pillar = new THREE.Mesh(
+        new THREE.BoxGeometry(0.26, 3.55, 0.08),
+        new THREE.MeshStandardMaterial({ map: rulerTex, roughness: 0.5 })
+      );
+      pillar.position.set(0, 2.0, -0.55);
+      pillar.castShadow = true;
+      worldGroup.add(pillar);
+
+      const heavyBall = new THREE.Mesh(
+        new THREE.SphereGeometry(0.38, 28, 28),
+        new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.82, roughness: 0.22 })
+      );
+      heavyBall.position.set(-1.2, 3.3, 0);
+      heavyBall.castShadow = true;
+
+      const lightBall = new THREE.Mesh(
+        new THREE.SphereGeometry(0.24, 24, 24),
+        new THREE.MeshStandardMaterial({ color: 0x0f8a80, roughness: 0.35, metalness: 0.15 })
+      );
+      lightBall.position.set(1.2, 3.3, 0);
+      lightBall.castShadow = true;
+
+      worldGroup.add(heavyBall, lightBall);
+      sceneHandles = { heavyBall, lightBall };
+    }
+
+    /* --- DETAILED 3D MODEL 5: SINTESIS SEMESTA (4 POIN TERPADU) --- */
+    function buildModel5() {
+      clearWorld();
+      keyLight.position.set(6, 10, 6);
+
+      const tileTex = makeCourtTileTexture();
+      const disc = new THREE.Mesh(
+        new THREE.CylinderGeometry(3.2, 3.35, 0.22, 36),
+        new THREE.MeshStandardMaterial({ map: tileTex, roughness: 0.82 })
+      );
+      disc.position.y = 0.11;
+      disc.receiveShadow = true;
+      worldGroup.add(disc);
+
+      // Center Flagpole
+      const pole = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.04, 0.055, 2.75, 14),
+        new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.7, roughness: 0.25 })
+      );
+      pole.position.y = 1.58;
+      pole.castShadow = true;
+      const flag = new THREE.Mesh(
+        new THREE.BoxGeometry(0.72, 0.36, 0.03),
+        new THREE.MeshStandardMaterial({ color: 0xd9483b })
+      );
+      flag.position.set(0.37, 2.75, 0);
+      worldGroup.add(pole, flag);
+
+      // West Quadrant: Tree
+      const woodTex = makeWoodTexture("#6B4423");
+      const trunk = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.12, 0.18, 1.1, 12),
+        new THREE.MeshStandardMaterial({ map: woodTex })
+      );
+      trunk.position.set(-1.6, 0.76, 0.9);
+      const leaves = new THREE.Mesh(
+        new THREE.DodecahedronGeometry(0.66, 1),
+        new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.72 })
+      );
+      leaves.position.set(-1.6, 1.52, 0.9);
+      leaves.castShadow = true;
+      worldGroup.add(trunk, leaves);
+
+      // East Quadrant: Window Frame
+      const winFrame = new THREE.Mesh(
+        new THREE.BoxGeometry(0.14, 1.3, 1.5),
+        new THREE.MeshStandardMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.45, roughness: 0.15 })
+      );
+      winFrame.position.set(1.7, 0.9, 0.7);
+      worldGroup.add(winFrame);
+
+      // North Quadrant: Gravity Sphere
+      const gravOrb = new THREE.Mesh(
+        new THREE.SphereGeometry(0.32, 24, 24),
+        new THREE.MeshStandardMaterial({ color: 0xc68b17, metalness: 0.5, roughness: 0.28 })
+      );
+      gravOrb.position.set(0, 1.2, -1.5);
+      gravOrb.castShadow = true;
+      worldGroup.add(gravOrb);
+
+      sceneHandles = { gravOrb };
+    }
+
+    const modelBuilders = [buildModel1, buildModel2, buildModel3, buildModel4, buildModel5];
+
+    /* =========================================================================
+       CALLOUT CONNECTORS (DESKTOP SVG) + MOBILE CALLOUT STRIP
+       ========================================================================= */
+    function updateCalloutConnectors() {
+      if (!appState.showLabels || window.innerWidth <= 1024) return;
+      const svg = document.getElementById("callout-svg-layer");
+      const stageRect = stageArea.getBoundingClientRect();
+      const mod = LKPD_MODULES[appState.moduleIdx];
+      let svgMarkup = "";
+
+      mod.callouts.forEach((c, idx) => {
+        const cardEl = document.getElementById(`callout-${idx}`);
+        if (!cardEl) return;
+        const cardRect = cardEl.getBoundingClientRect();
+
+        const x1 = cardRect.left - stageRect.left + cardRect.width / 2;
+        const y1 = idx === 3 ? cardRect.top - stageRect.top : cardRect.bottom - stageRect.top;
+
+        const vec = new THREE.Vector3(c.anchor[0], c.anchor[1], c.anchor[2]);
+        vec.project(camera);
+        const x2 = (vec.x * 0.5 + 0.5) * stageRect.width;
+        const y2 = (-vec.y * 0.5 + 0.5) * stageRect.height;
+
+        const midY = (y1 + y2) / 2;
+        svgMarkup += `
+          <path d="M ${x1} ${y1} L ${x1} ${midY} L ${x2} ${midY} L ${x2} ${y2}"
+                fill="none" stroke="#181C24" stroke-width="1.25" stroke-dasharray="3 3" opacity="0.55" />
+          <circle cx="${x1}" cy="${y1}" r="3.5" fill="#FAF9F5" stroke="#0F8A80" stroke-width="1.8" />
+          <circle cx="${x2}" cy="${y2}" r="4" fill="#0F8A80" stroke="#FFFFFF" stroke-width="1.5" />
+        `;
+      });
+
+      svg.innerHTML = svgMarkup;
+    }
+
+    function renderMobileCallouts() {
+      const strip = document.getElementById("mobile-callout-strip");
+      const mod = LKPD_MODULES[appState.moduleIdx];
+      strip.innerHTML = mod.callouts.map(c => `
+        <div class="mobile-callout-pill">
+          <div class="callout-header">
+            <span class="callout-icon">${c.icon}</span>
+            <span>${c.title}</span>
+          </div>
+          <div class="callout-body">${c.desc}</div>
+        </div>
+      `).join("");
+    }
+
+    function renderBottomLessons() {
+      const strip = document.getElementById("lessons-strip");
+      strip.innerHTML = LKPD_MODULES.map((m, idx) => {
+        const isActive = idx === appState.moduleIdx;
+        return `
+          <button class="lesson-card ${isActive ? "active" : ""}" data-mod-idx="${idx}">
+            <span class="lesson-check">✓</span>
+            <div class="lesson-thumb">${m.icon}</div>
+            <div class="lesson-meta">
+              <div class="lesson-num">${m.shortCode} &rsaquo;</div>
+              <div class="lesson-sub">${m.subLabel}</div>
+            </div>
+          </button>
+        `;
+      }).join("");
+
+      strip.querySelectorAll(".lesson-card").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          selectModule(parseInt(btn.dataset.modIdx, 10));
+        });
+      });
+
+      const pct = ((appState.moduleIdx + 1) / LKPD_MODULES.length) * 100;
+      document.getElementById("header-progress-text").textContent = `${appState.moduleIdx + 1}/${LKPD_MODULES.length}`;
+      document.getElementById("header-progress-fill").style.width = `${pct}%`;
+    }
+
+    function updateCalloutCardsText() {
+      const mod = LKPD_MODULES[appState.moduleIdx];
+      mod.callouts.forEach((c, idx) => {
+        document.getElementById(`c${idx}-icon`).textContent = c.icon;
+        document.getElementById(`c${idx}-title`).textContent = c.title;
+        document.getElementById(`c${idx}-desc`).textContent = c.desc;
+      });
+      renderMobileCallouts();
+    }
+
+    function renderInspector() {
+      const container = document.getElementById("inspector-content");
+      const mod = LKPD_MODULES[appState.moduleIdx];
+
+      document.querySelectorAll(".tab-btn").forEach((b) => {
+        b.classList.toggle("active", b.dataset.tab === appState.inspectorTab);
+      });
+      document.querySelectorAll(".rail-btn").forEach((b) => {
+        b.classList.toggle("active", b.dataset.railTab === appState.inspectorTab);
+      });
+
+      if (appState.inspectorTab === "overview") {
+        let sandboxHtml = "";
+        if (appState.moduleIdx === 0) {
+          sandboxHtml = `
+            <div class="sandbox-card">
+              <div class="sandbox-header">
+                <span class="sandbox-title">TRY IT YOURSELF • SIMULASI IKLIM</span>
+              </div>
+              <div class="control-choice-grid">
+                <button class="choice-btn ${appState.climate === "elnino" ? "active" : ""}" data-clim="elnino">☀️ El Niño</button>
+                <button class="choice-btn ${appState.climate === "normal" ? "active" : ""}" data-clim="normal">🌤️ Normal</button>
+                <button class="choice-btn ${appState.climate === "lanina" ? "active" : ""}" data-clim="lanina">🌧️ La Niña</button>
+              </div>
+              <div class="code-telemetry" id="telemetry-box">
+                Status: ${
+                  appState.climate === "elnino"
+                    ? "Musim kering → tanah retak, daun menguning & rontok."
+                    : appState.climate === "lanina"
+                    ? "Musim basah → tanah becek jenuh air, daun hijau lebat."
+                    : "Musim normal → kelembapan tanah seimbang."
+                }
+              </div>
+            </div>
+          `;
+        } else if (appState.moduleIdx === 1) {
+          const hh = String(Math.floor(appState.sunHour)).padStart(2, "0");
+          const mm = String(Math.round((appState.sunHour % 1) * 60)).padStart(2, "0");
+          sandboxHtml = `
+            <div class="sandbox-card">
+              <div class="sandbox-header">
+                <span class="sandbox-title">TRY IT YOURSELF • WAKTU MATAHARI</span>
+                <span class="font-mono" style="font-size:11px; font-weight:700; color:var(--accent-teal);">${hh}:${mm} WIB</span>
+              </div>
+              <input type="range" id="sun-range" min="6" max="17" step="0.1" value="${appState.sunHour}" style="width:100%; accent-color:var(--accent-navy); cursor:pointer;" />
+              <div class="code-telemetry" id="telemetry-box">
+                ${
+                  appState.sunHour < 10.5
+                    ? "Pagi hari: Bayangan tiang bendera sangat panjang mengarah ke Barat."
+                    : appState.sunHour <= 13.5
+                    ? "Siang hari: Bayangan memendek tepat di bawah tiang bendera."
+                    : "Sore hari: Bayangan memanjang kembali ke arah Timur."
+                }
+              </div>
+            </div>
+          `;
+        } else if (appState.moduleIdx === 2) {
+          sandboxHtml = `
+            <div class="sandbox-card">
+              <div class="sandbox-header">
+                <span class="sandbox-title">TRY IT YOURSELF • POSISI MATAHARI</span>
+              </div>
+              <div class="control-choice-grid">
+                <button class="choice-btn ${appState.classTime === "pagi" ? "active" : ""}" data-ctime="pagi">🌅 Pagi</button>
+                <button class="choice-btn ${appState.classTime === "siang" ? "active" : ""}" data-ctime="siang">☀️ Siang</button>
+                <button class="choice-btn ${appState.classTime === "sore" ? "active" : ""}" data-ctime="sore">🌇 Sore</button>
+              </div>
+              <div class="code-telemetry" id="telemetry-box">
+                ${
+                  appState.classTime === "pagi"
+                    ? "Jendela Timur terang benderang (~850 Lux); Jendela Barat teduh (~120 Lux)."
+                    : appState.classTime === "sore"
+                    ? "Jendela Barat menerima sinar langsung; Jendela Timur teduh."
+                    : "Cahaya matahari tegak lurus di atas atap sekolah."
+                }
+              </div>
+            </div>
+          `;
+        } else if (appState.moduleIdx === 3) {
+          sandboxHtml = `
+            <div class="sandbox-card">
+              <div class="sandbox-header">
+                <span class="sandbox-title">TRY IT YOURSELF • JATUH BEBAS</span>
+                <button class="run-pill-btn" id="btn-run-gravity">▶ JATUHKAN</button>
+              </div>
+              <div class="code-telemetry" id="telemetry-box">
+                const g = 9.8; // m/s²<br/>
+                Bola Besi (5 kg) &amp; Bola Hijau (0,2 kg) jatuh bersamaan ke bawah.
+              </div>
+            </div>
+          `;
+        } else {
+          sandboxHtml = `
+            <div class="sandbox-card">
+              <div class="sandbox-header">
+                <span class="sandbox-title">RINGKASAN PROJEK KOKURIKULER</span>
+              </div>
+              <div class="code-telemetry">
+                Satuan Pendidikan: MAN 1 Nganjuk<br/>
+                Tema: Sains dan Ayat-Ayat Semesta<br/>
+                Total Titik Observasi LKPD: 4 Poin Terverifikasi
+              </div>
+            </div>
+          `;
+        }
+
+        container.innerHTML = `
+          <div>
+            <div class="section-kicker">${mod.kicker}</div>
+            <h2 class="font-display inspector-title">${mod.title}</h2>
+          </div>
+
+          <div class="obs-highlight-box">
+            <div style="font-size:10.5px; font-weight:700; color:var(--accent-navy); text-transform:uppercase;">Data / Hasil Pengamatan LKPD:</div>
+            <p class="inspector-desc" style="color:var(--ink-primary); margin-top:3px;">${mod.observationResult}</p>
+          </div>
+
+          <p class="inspector-desc">${mod.scientificOverview}</p>
+
+          <div class="spec-list">
+            ${mod.specs.map(s => `
+              <div class="spec-row">
+                <span class="spec-icon">${s.icon}</span>
+                <span>${s.text}</span>
+              </div>
+            `).join("")}
+          </div>
+
+          ${sandboxHtml}
+        `;
+
+        container.querySelectorAll("[data-clim]").forEach(btn => {
+          btn.addEventListener("click", () => {
+            appState.climate = btn.dataset.clim;
+            applyModel1State();
+            renderInspector();
+          });
+        });
+
+        const sunSlider = container.querySelector("#sun-range");
+        if (sunSlider) {
+          sunSlider.addEventListener("input", () => {
+            appState.sunHour = parseFloat(sunSlider.value);
+            applyModel2State();
+            renderInspector();
+          });
+        }
+
+        container.querySelectorAll("[data-ctime]").forEach(btn => {
+          btn.addEventListener("click", () => {
+            appState.classTime = btn.dataset.ctime;
+            applyModel3State();
+            renderInspector();
+          });
+        });
+
+        const gravBtn = container.querySelector("#btn-run-gravity");
+        if (gravBtn) {
+          gravBtn.addEventListener("click", () => {
+            appState.isDropping = true;
+            appState.dropTime = 0;
+          });
+        }
+      } else if (appState.inspectorTab === "quran") {
+        container.innerHTML = `
+          <div>
+            <div class="section-kicker">INTEGRASI KEILMUAN & PANCA CINTA</div>
+            <h2 class="font-display inspector-title">Tadabbur Ayat: ${mod.quran.surah}</h2>
+          </div>
+
+          <div class="quran-card">
+            <div class="font-arabic" style="font-size:20px; color:var(--ink-primary);">${mod.quran.arabic}</div>
+            <p class="inspector-desc" style="color:var(--ink-primary); font-style:italic; margin-top:8px;">
+              “${mod.quran.translation}”
+            </p>
+            <div class="font-mono" style="font-size:11px; font-weight:700; color:var(--accent-amber); margin-top:6px;">
+              — ${mod.quran.surah}
+            </div>
+          </div>
+
+          <div class="obs-highlight-box" style="border-left-color:var(--accent-teal);">
+            <div style="font-size:10.5px; font-weight:700; color:var(--accent-teal); text-transform:uppercase;">Konteks Tafsir & Relevansi:</div>
+            <p class="inspector-desc" style="margin-top:4px;">${mod.quran.tafsir}</p>
+          </div>
+
+          <div class="obs-highlight-box" style="border-left-color:var(--accent-amber);">
+            <div style="font-size:10.5px; font-weight:700; color:var(--accent-amber); text-transform:uppercase;">Refleksi Kurikulum Berbasis Cinta:</div>
+            <p class="inspector-desc" style="margin-top:4px;">${mod.quran.reflection}</p>
+          </div>
+        `;
+      } else if (appState.inspectorTab === "matriks") {
+        const rows = LKPD_MODULES.slice(0, 4);
+        container.innerHTML = `
+          <div>
+            <div class="section-kicker">REKAPITULASI CATATAN ILMIAH</div>
+            <h2 class="font-display inspector-title">Tabel Lengkap Observasi LKPD</h2>
+          </div>
+
+          <table class="matrix-table">
+            <thead>
+              <tr>
+                <th style="width:32px;">No</th>
+                <th>Objek &amp; Hasil Pengamatan</th>
+                <th style="width:92px;">Ayat</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map(r => `
+                <tr>
+                  <td class="font-mono" style="font-weight:700; color:var(--ink-primary);">0${r.id}</td>
+                  <td>
+                    <strong style="color:var(--ink-primary);">${r.observedObject}</strong><br/>
+                    <span>${r.observationResult}</span>
+                  </td>
+                  <td class="font-mono" style="font-size:10.5px; color:var(--accent-teal); font-weight:600;">${r.quran.surah}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        `;
+      } else if (appState.inspectorTab === "kuis") {
+        const qObj = QUIZ_DATA[appState.quizIdx];
+        const answered = appState.quizSelected !== null;
+        container.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="section-kicker">SOAL ${appState.quizIdx + 1} / ${QUIZ_DATA.length}</span>
+            <span class="font-mono" style="font-size:11px; font-weight:700; color:var(--accent-teal);">SKOR: ${appState.quizScore}</span>
+          </div>
+          <h2 class="font-display inspector-title" style="font-size:15px;">${qObj.q}</h2>
+
+          <div>
+            ${qObj.opts.map((opt, idx) => {
+              let cls = "quiz-opt-btn";
+              if (answered) {
+                if (idx === qObj.ans) cls += " correct";
+                else if (idx === appState.quizSelected) cls += " wrong";
+              }
+              return `<button class="${cls}" ${answered ? "disabled" : ""} data-qopt="${idx}">${opt}</button>`;
+            }).join("")}
+          </div>
+
+          ${
+            answered
+              ? `<div class="obs-highlight-box" style="border-left-color:var(--accent-teal);">
+                   <div style="font-size:10.5px; font-weight:700; color:var(--accent-teal);">PEMBAHASAN LKPD:</div>
+                   <p class="inspector-desc" style="margin-top:3px;">${qObj.exp}</p>
+                 </div>
+                 <button class="run-pill-btn" id="btn-next-quiz" style="justify-content:center; padding:9px;">
+                   ${appState.quizIdx < QUIZ_DATA.length - 1 ? "Pertanyaan Berikutnya →" : "Ulangi Evaluasi ↺"}
+                 </button>`
+              : ""
+          }
+        `;
+
+        container.querySelectorAll("[data-qopt]").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const chosen = parseInt(btn.dataset.qopt, 10);
+            appState.quizSelected = chosen;
+            if (chosen === qObj.ans) appState.quizScore += 25;
+            renderInspector();
+          });
+        });
+
+        const nextQuizBtn = container.querySelector("#btn-next-quiz");
+        if (nextQuizBtn) {
+          nextQuizBtn.addEventListener("click", () => {
+            if (appState.quizIdx < QUIZ_DATA.length - 1) {
+              appState.quizIdx++;
+            } else {
+              appState.quizIdx = 0;
+              appState.quizScore = 0;
+            }
+            appState.quizSelected = null;
+            renderInspector();
+          });
+        }
+      }
+    }
+
+    function selectModule(idx) {
+      appState.moduleIdx = idx;
+      appState.isDropping = false;
+      appState.dropTime = 0;
+      modelBuilders[idx]();
+      renderBottomLessons();
+      updateCalloutCardsText();
+      renderInspector();
+    }
+
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        appState.inspectorTab = btn.dataset.tab;
+        renderInspector();
+      });
+    });
+
+    document.querySelectorAll(".rail-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        appState.inspectorTab = btn.dataset.railTab;
+        renderInspector();
+        if (window.innerWidth <= 1024) {
+          document.querySelector(".right-inspector")?.scrollIntoView({ behavior: "smooth" });
+        }
+      });
+    });
+
+    window.addEventListener("keydown", (e) => {
+      if (["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)) return;
+      if (e.key === "ArrowRight") {
+        selectModule((appState.moduleIdx + 1) % LKPD_MODULES.length);
+      } else if (e.key === "ArrowLeft") {
+        selectModule((appState.moduleIdx - 1 + LKPD_MODULES.length) % LKPD_MODULES.length);
+      }
+    });
+
+    window.addEventListener("resize", () => {
+      if (!stageArea.clientWidth) return;
+      camera.aspect = stageArea.clientWidth / stageArea.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(stageArea.clientWidth, stageArea.clientHeight);
+    });
+
+    const clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = clock.getDelta();
+      const elapsed = clock.getElapsedTime();
+
+      if (appState.autoOrbit && !isDragging) {
+        camYaw += dt * 0.14;
+      }
+
+      camera.position.x = Math.sin(camYaw) * Math.cos(camPitch) * camRadius;
+      camera.position.y = Math.sin(camPitch) * camRadius + 0.6;
+      camera.position.z = Math.cos(camYaw) * Math.cos(camPitch) * camRadius;
+      camera.lookAt(0, 1.15, 0);
+
+      if (appState.moduleIdx === 0 && sceneHandles.particles && sceneHandles.particles.visible) {
+        const arr = sceneHandles.particles.geometry.attributes.position.array;
+        const speed = appState.climate === "lanina" ? 4.2 * dt : 1.0 * dt;
+        for (let i = 1; i < arr.length; i += 3) {
+          arr[i] -= speed;
+          if (arr[i] < 0.8) arr[i] = 4.2;
+        }
+        sceneHandles.particles.geometry.attributes.position.needsUpdate = true;
+      }
+
+      if (appState.moduleIdx === 1 && sceneHandles.flagTop) {
+        sceneHandles.flagTop.rotation.y = Math.sin(elapsed * 3.5) * 0.12;
+        sceneHandles.flagBot.rotation.y = Math.sin(elapsed * 3.5) * 0.12;
+      }
+
+      if (appState.moduleIdx === 3 && appState.isDropping && sceneHandles.heavyBall) {
+        appState.dropTime += dt;
+        const gVis = 4.9;
+        const disp = 0.5 * gVis * appState.dropTime * appState.dropTime;
+        const nextHeavy = Math.max(0.62, 3.3 - disp);
+        const nextLight = Math.max(0.48, 3.3 - disp);
+
+        sceneHandles.heavyBall.position.y = nextHeavy;
+        sceneHandles.lightBall.position.y = nextLight;
+
+        const telBox = document.getElementById("telemetry-box");
+        if (telBox) {
+          const v = (9.8 * appState.dropTime).toFixed(2);
+          telBox.innerHTML = `t = ${appState.dropTime.toFixed(2)}s | v = ${v} m/s | g = 9,8 m/s²<br/>Kedua benda menyentuh dasar bersamaan!`;
+        }
+
+        if (nextHeavy <= 0.62 && nextLight <= 0.48) {
+          appState.isDropping = false;
+        }
+      }
+
+      if (appState.moduleIdx === 4 && sceneHandles.gravOrb) {
+        sceneHandles.gravOrb.position.y = 1.25 + Math.sin(elapsed * 2.2) * 0.14;
+      }
+
+      updateCalloutConnectors();
+      renderer.render(scene, camera);
+    }
+
+    selectModule(0);
+    animate();
+  </script>
+</body>
+</html>
